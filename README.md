@@ -14,7 +14,7 @@ ExtBackup is aimed at server owners. It's so far only tested on Linux and does n
 the program with the Minecraft directory as current working directory. It may well work on Windows, or it may not.
 
 ## Acknowledgements
-* [LatvianModder](https://github.com/LatvianModder) for his work on [FTB-Baackups](https://github.com/FTBTeam/FTB-Backups) 
+* [LatvianModder](https://github.com/LatvianModder) for his work on [FTB-Backups](https://github.com/FTBTeam/FTB-Backups)
   where I stole a lot of the code for this.
-* [alexbobp](https://github.com/alexbobp) and the [elytra](https://github.com/elytra) group for 
+* [alexbobp](https://github.com/alexbobp) and the [elytra](https://github.com/elytra) group for
   [BTFU](https://github.com/elytra/BTFU), which gave me the idea but didn't go quite far enough.
