@@ -64,6 +64,25 @@ public enum BackupHandler {
 		
 		doingBackup = 1;
 		
+		try	{
+			if (server.getPlayerList() != null)	{
+				server.getPlayerList().saveAllPlayerData();
+			}
+
+			for (WorldServer world : server.worlds)	{
+				if (world != null) {
+					world.saveAllChunks(true, null);
+					world.flushToDisk();
+					world.disableLevelSaving = true;
+				}
+			}
+		} catch (Exception ex) {
+			ExtBackup.logger.error("Saving the world failed!");
+			enableSaving(server);
+			ex.printStackTrace();
+			return false;
+		}
+
 		ThreadedFileIOBase.getThreadedIOInstance().queueIO(() -> {
 			try	{
 				doBackup(server, script);
@@ -81,26 +100,7 @@ public enum BackupHandler {
 	
 	private void doBackup(MinecraftServer server, File script) {
 		ExtBackup.logger.info("Starting backup.");
-		PlayerList pl = server.getPlayerList();
 		ExtBackupUtil.broadcast(server, "Starting Backup!");
-		try	{
-			if (server.getPlayerList() != null)	{
-				server.getPlayerList().saveAllPlayerData();
-			}
-
-			for (WorldServer world : server.worlds)	{
-				if (world != null) {
-					world.saveAllChunks(true, null);
-					world.flushToDisk();
-					world.disableLevelSaving = true;
-				}
-			}
-		} catch (Exception ex) {
-			ExtBackup.logger.error("Saving the world failed!");
-			enableSaving(server);
-			ex.printStackTrace();
-			return;
-		}
 		
 		ProcessBuilder pb = new ProcessBuilder(script.getAbsolutePath());
 		int returnValue = -1;
