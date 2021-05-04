@@ -4,20 +4,19 @@
     # Forge for 1.16.3 is version 34
     loaderVersion="[36.1,)"
     # A URL to refer people to when problems occur with this mod
-    issueTrackerURL="https://github.com/MinecraftForge/MinecraftForge/issues"
+    issueTrackerURL="https://github.com/jinks/extbackup/issues"
     license="GPL"
 
     [[mods]]
       modId="extbackup"
       version="${file.jarVersion}"
       displayName="ExtBackup"
-      #updateJSONURL="https://minecraftforge.net/versions.json"
-      displayURL="minecraftforge.net"
+      displayURL="https://github.com/jinks/extbackup"
       #logoFile="assets/examplemod/textures/logo.png"
-      credits="I'd like to thank my mother and father."
+      credits="LatVianModder, alexbobp, vazkii"
       authors="jinks"
       description='''
-      Lets you craft dirt into diamonds. This is a traditional mod that has existed for eons. It is ancient. The holy Notch created it. Jeb rainbowfied it. Dinnerbone made it upside down. Etc.
+      Minimal Minecraft backup mod, relying on external backup tools.
       '''
 
       [[dependencies.extbackup]]
