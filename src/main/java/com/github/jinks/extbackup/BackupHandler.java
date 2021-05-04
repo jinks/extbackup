@@ -4,18 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.management.PlayerList;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.world.WorldServer;
-import net.minecraft.world.storage.ThreadedFileIOBase;
+import net.minecraft.world.server.ServerWorld;
 
 public enum BackupHandler {
 	INSTANCE;
@@ -24,11 +17,10 @@ public enum BackupHandler {
 	public int doingBackup = 0;
 	public boolean hadPlayersOnline = false;
 	private boolean youHaveBeenWarned = false;
-	
 	public void init() {
 		doingBackup = 0;
-		nextBackup = System.currentTimeMillis() + ExtBackupConfig.general.time();
-		File script = ExtBackupConfig.general.getScript();
+		nextBackup = System.currentTimeMillis() + ConfigHandler.COMMON.time();
+		File script = ConfigHandler.COMMON.getScript();
 		
 		if (!script.exists()) {
 			script.getParentFile().mkdirs();
@@ -38,17 +30,16 @@ public enum BackupHandler {
 			} catch (IOException e) {
 				ExtBackup.logger.error("Backup script does not exist and cannot be created!");
 				ExtBackup.logger.error("Disabling ExtBackup!");
-				ExtBackupConfig.general.enabled = false;
+				ConfigHandler.COMMON.enabled.set(false);
 			}
 		}
-		
-		ExtBackup.logger.info("Starting "+ExtBackup.NAME+" v"+ExtBackup.VERSION);
+
 		ExtBackup.logger.info("Active script: " + script.getAbsolutePath());
 		ExtBackup.logger.info("Next Backup at: " + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).format(new Date(nextBackup)));
 	}
 
 	public boolean run(MinecraftServer server) {
-		if (doingBackup != 0 || !ExtBackupConfig.general.enabled) {
+		if (doingBackup != 0 || !ConfigHandler.COMMON.enabled.get()) {
 			return false;
 		}
 		if (doingBackup != 0) {
@@ -56,7 +47,7 @@ public enum BackupHandler {
 			return false;
 		}
 		
-		File script = ExtBackupConfig.general.getScript();
+		File script = ConfigHandler.COMMON.getScript();
 		if (!script.exists() || !script.canExecute()) {
 			ExtBackup.logger.error("Cannot access or execute backup script. Bailing out!");
 			return false;
@@ -66,14 +57,13 @@ public enum BackupHandler {
 		
 		try	{
 			if (server.getPlayerList() != null)	{
-				server.getPlayerList().saveAllPlayerData();
+				server.getPlayerList().saveAll();
 			}
 
-			for (WorldServer world : server.worlds)	{
+			for (ServerWorld world : server.getAllLevels())	{
 				if (world != null) {
-					world.saveAllChunks(true, null);
-					world.flushToDisk();
-					world.disableLevelSaving = true;
+					//world.save(null, true, false);
+					world.noSave = true;
 				}
 			}
 		} catch (Exception ex) {
@@ -83,7 +73,7 @@ public enum BackupHandler {
 			return false;
 		}
 
-		ThreadedFileIOBase.getThreadedIOInstance().queueIO(() -> {
+		new Thread(() -> {
 			try	{
 				doBackup(server, script);
 			} catch (Exception ex)	{
@@ -91,20 +81,19 @@ public enum BackupHandler {
 			}
 
 			doingBackup = 2;
-			return false;
-		});
+		}).start();
 		
-		nextBackup = System.currentTimeMillis() + ExtBackupConfig.general.time();
+		nextBackup = System.currentTimeMillis() + ConfigHandler.COMMON.time();
 		return true;
 	}
 	
-	private void doBackup(MinecraftServer server, File script) {
-		ExtBackup.logger.info("Starting backup.");
+	private int doBackup(MinecraftServer server, File script) {
+		if (ConfigHandler.COMMON.silent.get()) {ExtBackup.logger.info("Starting backup.");}
 		ExtBackupUtil.broadcast(server, "Starting Backup!");
 		
 		ProcessBuilder pb = new ProcessBuilder(script.getAbsolutePath());
 		int returnValue = -1;
-		Map<String, String> env = pb.environment();
+		//Map<String, String> env = pb.environment();
 		pb.redirectErrorStream(true);
 		try {
 			Process backup = pb.start();
@@ -117,14 +106,16 @@ public enum BackupHandler {
 		}
 		enableSaving(server);
 		youHaveBeenWarned = false;
-		ExtBackup.logger.info("Backup done.");
+		if (ConfigHandler.COMMON.silent.get()) {ExtBackup.logger.info("Backup done.");}
 		ExtBackupUtil.broadcast(server, "Backup done!");
+		ExtBackup.logger.info("Next Backup at: " + (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).format(new Date(nextBackup)));
+		return returnValue;
 	}
 	
 	private void enableSaving(MinecraftServer server) {
-		for (WorldServer world : server.worlds)	{
+		for (ServerWorld world : server.getAllLevels())	{
 			if (world != null) {
-				world.disableLevelSaving = false;
+				world.noSave = false;
 			}
 		}
 	}
@@ -132,7 +123,7 @@ public enum BackupHandler {
 	public void tick(MinecraftServer server, long now) {
 		if (nextBackup > 0L && nextBackup <= now) {
 			//ExtBackup.logger.info("Backup time!");
-			if (!ExtBackupConfig.general.only_if_players_online || hadPlayersOnline || !server.getPlayerList().getPlayers().isEmpty()) {
+			if (!ConfigHandler.COMMON.only_if_players_online.get() || hadPlayersOnline || !server.getPlayerList().getPlayers().isEmpty()) {
 				hadPlayersOnline = false;
 				run(server);
 			}

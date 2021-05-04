@@ -1,49 +1,58 @@
 package com.github.jinks.extbackup;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.minecraft.init.Blocks;
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSidedProvider;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartedEvent;
-import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-@Mod(modid = ExtBackup.MODID, name = ExtBackup.NAME, version = ExtBackup.VERSION, acceptableRemoteVersions = "*")
-@Mod.EventBusSubscriber
+@Mod(ExtBackup.MOD_ID)
+@Mod.EventBusSubscriber(modid = ExtBackup.MOD_ID)
 public class ExtBackup {
 	
-	public static final String MODID = "extbackup";
-    public static final String NAME = "ExtBackup";
-    public static final String VERSION = "1.0";
+	public static final String MOD_ID = "extbackup";
 
-    public static Logger logger;
+    public static final Logger logger = LogManager.getLogger("ExtBackup");
 
-    @Mod.EventHandler
-    public void preInit(FMLPreInitializationEvent event) {
-        logger = event.getModLog();
+    public ExtBackup() {
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHandler.COMMON_SPEC);
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        modBus.addListener(this::setup);
+        modBus.addListener((ModConfig.Loading e) -> ConfigHandler.onConfigLoad());
+		modBus.addListener((ModConfig.Reloading e) -> ConfigHandler.onConfigLoad());
+
+        // Register ourselves for server and other game events we are interested in
+        IEventBus forgeBus = MinecraftForge.EVENT_BUS;
+        forgeBus.register(this);
+        forgeBus.addListener(this::serverAboutToStart);
+		forgeBus.addListener(this::serverStopping);
     }
 
-    @Mod.EventHandler
-    public void init(FMLInitializationEvent event) {
-        // some example code
-        //logger.info("DIRT BLOCK >> {}", Blocks.DIRT.getRegistryName());
+    private void setup(final FMLCommonSetupEvent event) {
+        ConfigHandler.onConfigLoad();
     }
     
-    @Mod.EventHandler
-    public void serverStarted(FMLServerStartedEvent event) {
+    public void serverAboutToStart(FMLServerStartedEvent event) {
     	BackupHandler.INSTANCE.init();
     }
     
-    @Mod.EventHandler
+    @SubscribeEvent
     public void serverStopping(FMLServerStoppingEvent event) {
-    	if (ExtBackupConfig.general.force_on_shutdown) {
-    		MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+    	if (ConfigHandler.COMMON.force_on_shutdown.get()) {
+    		MinecraftServer server = event.getServer();
 
     		if (server != null) {
     			BackupHandler.INSTANCE.run(server);
@@ -54,7 +63,7 @@ public class ExtBackup {
     @SubscribeEvent
 	public static void serverTick(TickEvent.ServerTickEvent event) {
     	if (event.phase != TickEvent.Phase.START) {
-			MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+			MinecraftServer server = LogicalSidedProvider.INSTANCE.get(LogicalSide.SERVER);
 
 			if (server != null)	{
 				//logger.debug("Server Tick! " + event.phase);
