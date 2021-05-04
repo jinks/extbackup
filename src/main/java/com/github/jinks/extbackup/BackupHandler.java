@@ -27,6 +27,7 @@ public enum BackupHandler {
 			try {
 				Files.write(script.toPath(), "#!/bin/bash\n# Put your backup script here!\n\nexit 0".getBytes(StandardCharsets.UTF_8));
 				script.setExecutable(true);
+				ExtBackup.logger.info("No backup script was found, a script has been created at " + script.getAbsolutePath() + ", please modify it to your liking.");
 			} catch (IOException e) {
 				ExtBackup.logger.error("Backup script does not exist and cannot be created!");
 				ExtBackup.logger.error("Disabling ExtBackup!");
