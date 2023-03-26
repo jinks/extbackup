@@ -9,14 +9,12 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.fml.LogicalSidedProvider;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
-import net.minecraftforge.fml.event.server.FMLServerStoppingEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(ExtBackup.MOD_ID)
@@ -31,8 +29,8 @@ public class ExtBackup {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ConfigHandler.COMMON_SPEC);
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(this::setup);
-        modBus.addListener((ModConfig.Loading e) -> ConfigHandler.onConfigLoad());
-		modBus.addListener((ModConfig.Reloading e) -> ConfigHandler.onConfigLoad());
+        //modBus.addListener((ModConfig.Loading e) -> ConfigHandler.onConfigLoad());
+		//modBus.addListener((ModConfig.Reloading e) -> ConfigHandler.onConfigLoad());
 
         // Register ourselves for server and other game events we are interested in
         IEventBus forgeBus = MinecraftForge.EVENT_BUS;
@@ -45,12 +43,12 @@ public class ExtBackup {
         ConfigHandler.onConfigLoad();
     }
     
-    public void serverAboutToStart(FMLServerStartedEvent event) {
+    public void serverAboutToStart(ServerStartedEvent event) {
     	BackupHandler.INSTANCE.init();
     }
     
     @SubscribeEvent
-    public void serverStopping(FMLServerStoppingEvent event) {
+    public void serverStopping(ServerStoppingEvent event) {
     	if (ConfigHandler.COMMON.force_on_shutdown.get()) {
     		MinecraftServer server = event.getServer();
 
@@ -61,9 +59,10 @@ public class ExtBackup {
     }
     
     @SubscribeEvent
-	public static void serverTick(TickEvent.ServerTickEvent event) {
+	public static void serverTick(TickEvent.WorldTickEvent event) {
     	if (event.phase != TickEvent.Phase.START) {
-			MinecraftServer server = LogicalSidedProvider.INSTANCE.get(LogicalSide.SERVER);
+			//MinecraftServer server = LogicalSidedProvider.INSTANCE.get(LogicalSide.SERVER);
+			MinecraftServer server = event.world.getServer();
 
 			if (server != null)	{
 				//logger.debug("Server Tick! " + event.phase);

@@ -8,7 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
 
 public enum BackupHandler {
 	INSTANCE;
@@ -61,10 +61,10 @@ public enum BackupHandler {
 				server.getPlayerList().saveAll();
 			}
 
-			for (ServerWorld world : server.getAllLevels())	{
-				if (world != null) {
+			for (ServerLevel level : server.getAllLevels())	{
+				if (level != null) {
 					//world.save(null, true, false);
-					world.noSave = true;
+					level.noSave = true;
 				}
 			}
 		} catch (Exception ex) {
@@ -114,9 +114,9 @@ public enum BackupHandler {
 	}
 	
 	private void enableSaving(MinecraftServer server) {
-		for (ServerWorld world : server.getAllLevels())	{
-			if (world != null) {
-				world.noSave = false;
+		for (ServerLevel level : server.getAllLevels())	{
+			if (level != null) {
+				level.noSave = false;
 			}
 		}
 	}
