@@ -22,13 +22,13 @@
       [[dependencies.extbackup]]
         modId="forge"
         mandatory=true
-        versionRange="[42,)"
+        versionRange="[47,)"
         ordering="NONE"
         side="BOTH"
 
       [[dependencies.extbackup]]
         modId="minecraft"
         mandatory=true
-        versionRange="[1.19.2]"
+        versionRange="[1.20.1]"
         ordering="NONE"
         side="BOTH"
