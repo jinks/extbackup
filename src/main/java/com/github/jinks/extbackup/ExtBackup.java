@@ -59,10 +59,10 @@ public class ExtBackup {
     }
     
     @SubscribeEvent
-	public static void serverTick(TickEvent.WorldTickEvent event) {
+	public static void serverTick(TickEvent.ServerTickEvent event) {
     	if (event.phase != TickEvent.Phase.START) {
 			//MinecraftServer server = LogicalSidedProvider.INSTANCE.get(LogicalSide.SERVER);
-			MinecraftServer server = event.world.getServer();
+			MinecraftServer server = event.getServer();
 
 			if (server != null)	{
 				//logger.debug("Server Tick! " + event.phase);
